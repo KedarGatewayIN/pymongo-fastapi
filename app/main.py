@@ -1,7 +1,7 @@
 # app/main.py
 from fastapi import FastAPI
 from app.core.database import lifespan_mongodb # Import the renamed lifespan function
-from app.api.v1.endpoints import users # Import your users router
+from app.api.v1.users import users # Import your users router
 
 # Initialize FastAPI with the lifespan handler
 app = FastAPI(lifespan=lifespan_mongodb) # Use the imported lifespan_mongodb

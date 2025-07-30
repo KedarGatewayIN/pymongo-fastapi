@@ -31,8 +31,8 @@ async def lifespan_mongodb(app):
         db_client.close()
         print("MongoDB connection closed.")
 
-async def get_users_collection():
-    """Dependency to get the users collection."""
+async def get_database_instance():
+    """Dependency to get the database instance."""
     if db_instance is None:
         raise HTTPException(status_code=500, detail="Database connection not established.")
-    return db_instance["users"]
+    return db_instance
