@@ -1,28 +1,33 @@
-# app/core/database.py
 import contextlib
 import os
 from pymongo import AsyncMongoClient
-from fastapi import HTTPException
+from beanie import init_beanie
+from app.models.user import User
 
-# Read MongoDB URL from environment variable
-# Provide a default value for local development if the environment variable is not set
 MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://mongo_user:mongo_password@localhost:27017/")
 db_client: AsyncMongoClient = None
 db_instance = None
 
 @contextlib.asynccontextmanager
 async def lifespan_mongodb(app):
-    global db_client, db_instance
-    print("Connecting to MongoDB...")
+    global db_client # Only need db_client for Beanie initialization now
+    print("Connecting to MongoDB and Initializing Beanie...")
     try:
         db_client = AsyncMongoClient(MONGODB_URL, serverSelectionTimeoutMS=5000)
+
+        # Ping to ensure connection is established before Beanie init
         await db_client.admin.command('ping')
-        db_instance = db_client["mydatabase"]
-        print("Connected to MongoDB successfully.")
+
+        # Initialize Beanie with the client and document models
+        await init_beanie(
+            database=db_client["mydatabase"], # Your database name
+            document_models=[User] # List of Beanie Document models to register
+        )
+        print("Connected to MongoDB and Beanie initialized successfully.")
     except Exception as e:
-        print(f"Failed to connect to MongoDB: {e}")
+        print(f"Failed to connect to MongoDB or initialize Beanie: {e}")
         db_client = None
-        raise RuntimeError(f"Could not connect to MongoDB: {e}")
+        raise RuntimeError(f"Could not connect to MongoDB or initialize Beanie: {e}")
 
     yield
 
@@ -30,9 +35,3 @@ async def lifespan_mongodb(app):
     if db_client:
         db_client.close()
         print("MongoDB connection closed.")
-
-async def get_database_instance():
-    """Dependency to get the database instance."""
-    if db_instance is None:
-        raise HTTPException(status_code=500, detail="Database connection not established.")
-    return db_instance

@@ -1,26 +1,17 @@
-# app/models/user.py
-from pydantic import BaseModel, Field
-from bson import ObjectId
-from typing import Optional
+from pydantic import Field, EmailStr, BaseModel
+from beanie import Document # Import Document from beanie
 
-# Pydantic models
+# UserCreate remains a Pydantic BaseModel for request validation
 class UserCreate(BaseModel):
     name: str
-    email: str
+    email: EmailStr # Using EmailStr for email validation
 
-class User(BaseModel):
-    id: str = Field(alias="_id")
+# User now inherits from beanie.Document
+# This is your MongoDB Schema/Model
+class User(Document):
     name: str
-    email: str
+    email: EmailStr = Field(unique=True, index=True) # Add unique and index for email
 
-    class Config:
-        populate_by_name = True
-        json_encoders = {ObjectId: str}
-        extra = 'ignore'
-
-# Helper function to convert MongoDB's _id to string for Pydantic validation
-# This can be here or in core/database, keeping it with models for now as it's a model-related transformation
-def user_helper(user_data: dict) -> dict:
-    if "_id" in user_data:
-        user_data["_id"] = str(user_data["_id"])
-    return user_data
+    # Optional: Configure the MongoDB collection name
+    class Settings:
+        name = "users" # This will be the name of your MongoDB collection
