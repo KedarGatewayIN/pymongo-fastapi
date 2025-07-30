@@ -1,10 +1,11 @@
 from pydantic import Field, EmailStr, BaseModel
 from beanie import Document # Import Document from beanie
+from typing import List # Import List
 
 # UserCreate remains a Pydantic BaseModel for request validation
 class UserCreate(BaseModel):
     name: str
-    email: EmailStr # Using EmailStr for email validation
+    email: EmailStr # Using EmailStr for email validation\
 
 # User now inherits from beanie.Document
 # This is your MongoDB Schema/Model

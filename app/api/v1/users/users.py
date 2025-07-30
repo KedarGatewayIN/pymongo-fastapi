@@ -5,6 +5,7 @@ from beanie import PydanticObjectId # Beanie's ObjectId type for path parameters
 
 # Import models
 from app.models.user import User, UserCreate
+from app.models.response_models import UserWithProducts
 
 router = APIRouter()
 
@@ -31,6 +32,20 @@ async def create_user(user_in: UserCreate): # Renamed to avoid conflict with 'Us
     # Beanie's insert() automatically populates the _id, so new_user now has it.
     # It also handles the ObjectId -> str conversion for the response_model.
     return new_user
+
+@router.get('/users/withProducts', response_model=List[UserWithProducts])
+async def get_users_with_products():
+    users_with_products = await User.aggregate([
+        {
+            "$lookup": {
+                "from": "products",
+                "localField": "_id",
+                "foreignField": "creator_id",
+                "as": "products"
+            },
+        }
+    ]).to_list()
+    return users_with_products
 
 @router.get("/users", response_model=List[User])
 async def get_users():
