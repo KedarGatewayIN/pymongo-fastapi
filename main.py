@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 from typing import List
 from bson import ObjectId
 import contextlib
+import os
 
 class UserCreate(BaseModel):
     name: str
@@ -19,7 +20,7 @@ class User(BaseModel):
         json_encoders = {ObjectId: str}
         extra = 'ignore'
 
-MONGODB_URL = "mongodb://mongo_user:mongo_password@mongodb:27017/"
+MONGODB_URL = os.getenv("MONGODB_URL")
 
 mongodb_client: AsyncMongoClient = None
 db_instance = None
