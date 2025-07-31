@@ -14,12 +14,14 @@ services:
       SMTP_HOST: mailhog
       SMTP_PORT: 1025
       SENDER_EMAIL: noreply@yourdomain.com
-
+    volumes:
+      - ./app:/app/app
     depends_on:
       - mongodb
       - redis
       - mailhog
-    
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--log-level", "info", "--reload"]
+
   mongodb:
     image: mongo:latest
     ports:
@@ -44,7 +46,7 @@ services:
       - "1025:1025"
       - "8025:8025"
     logging:
-      driver: "none" 
+      driver: "none"
 
 volumes:
   mongo_data:
