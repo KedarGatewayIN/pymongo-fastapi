@@ -10,9 +10,14 @@ from app.models.user import User # Import User to validate creator_id
 
 from fastapi.security import OAuth2PasswordBearer
 from app.core.security import decode_access_token
+from app.core.cache import get_redis_client
+import json
+import logging
 
 # Define the OAuth2 scheme (remains the same)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
+CACHE_TTL_SECONDS = 60
+logger = logging.getLogger(__name__)
 
 # Dependency to get the current authenticated user (remains the same)
 async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> User:
@@ -37,7 +42,6 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> Use
 
 router = APIRouter(dependencies=[Depends(get_current_user)]) # <-- Global dependency for this router!
 
-
 @router.post("/products", response_model=Product, status_code=status.HTTP_201_CREATED)
 async def create_product(product_in: ProductCreate, current_user: User = Depends(get_current_user)):
     # Optional: Validate if the creator_id actually belongs to an existing user
@@ -54,6 +58,16 @@ async def create_product(product_in: ProductCreate, current_user: User = Depends
 
 @router.get("/products/withUsers", response_model=List[ProductWithUser])
 async def get_products():
+    redis_client = get_redis_client()
+    cache_key = "all_products"
+
+    cached_products_json = await redis_client.get(cache_key)
+
+    if cached_products_json:
+        logger.info("Cache hit for products!")
+        return json.loads(cached_products_json)
+
+    logger.info("Cache miss for products. Fetching from database...")
 
     products = await Product.aggregate([
         {

@@ -8,6 +8,7 @@ load_dotenv()
 SECRET_KEY: str = os.getenv("SECRET_KEY")
 ALGORITHM: str = os.getenv("ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
+REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0") # Default for local dev without Docker
 
 # MongoDB Settings (already defined in core/database.py, but can be centralized here too if preferred)
 # MONGODB_URL: str = os.getenv("MONGODB_URL", "mongodb://mongo_user:mongo_password@localhost:27017/")
