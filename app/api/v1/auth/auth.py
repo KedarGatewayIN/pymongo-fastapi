@@ -1,14 +1,15 @@
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, BackgroundTasks 
 from fastapi.security import OAuth2PasswordRequestForm # For standard OAuth2 password flow
 
 from app.models.user import User, UserCreate, UserLogin # Import updated user models
 from app.models.token import Token # Import Token model for response
 from app.core.security import get_password_hash, verify_password, create_access_token
+from app.core.mailer import send_welcome_email
 
 router = APIRouter()
 
 @router.post("/register", response_model=User, status_code=status.HTTP_201_CREATED)
-async def register_user(user_in: UserCreate):
+async def register_user(user_in: UserCreate, background_tasks: BackgroundTasks):
     # Check if a user with this email already exists
     existing_user = await User.find_one(User.email == user_in.email)
     if existing_user:
@@ -28,6 +29,7 @@ async def register_user(user_in: UserCreate):
     )
 
     await new_user.insert() # Save to MongoDB
+    background_tasks.add_task(send_welcome_email, new_user.email, new_user.name)
     return new_user # Returns the user object (FastAPI/Pydantic will filter out hashed_password unless specified)
 
 @router.post("/token", response_model=Token)

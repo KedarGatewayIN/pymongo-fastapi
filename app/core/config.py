@@ -10,6 +10,6 @@ ALGORITHM: str = os.getenv("ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
 REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0") # Default for local dev without Docker
 
-# MongoDB Settings (already defined in core/database.py, but can be centralized here too if preferred)
-# MONGODB_URL: str = os.getenv("MONGODB_URL", "mongodb://mongo_user:mongo_password@localhost:27017/")
-# DB_NAME: str = os.getenv("DB_NAME", "mydatabase")
+SMTP_HOST: str = os.getenv("SMTP_HOST", "localhost")
+SMTP_PORT: int = int(os.getenv("SMTP_PORT", 1025))
+SENDER_EMAIL: str = os.getenv("SENDER_EMAIL", "noreply@example.com")
