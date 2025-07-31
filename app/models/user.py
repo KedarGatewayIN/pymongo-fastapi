@@ -1,18 +1,22 @@
 from pydantic import Field, EmailStr, BaseModel
-from beanie import Document # Import Document from beanie
-from typing import List # Import List
+from beanie import Document
 
-# UserCreate remains a Pydantic BaseModel for request validation
+# Updated UserCreate to include password
 class UserCreate(BaseModel):
     name: str
-    email: EmailStr # Using EmailStr for email validation\
+    email: EmailStr
+    password: str # This will be the plain password provided by the user
 
-# User now inherits from beanie.Document
-# This is your MongoDB Schema/Model
+# New: Model for user login requests (email and password)
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+# Modified User Beanie Document to store the hashed password
 class User(Document):
     name: str
-    email: EmailStr = Field(unique=True, index=True) # Add unique and index for email
+    email: EmailStr = Field(unique=True, index=True)
+    hashed_password: str # <-- NEW: To store the hashed password
 
-    # Optional: Configure the MongoDB collection name
     class Settings:
-        name = "users" # This will be the name of your MongoDB collection
+        name = "users"

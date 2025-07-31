@@ -1,6 +1,6 @@
 # app/api/v1/products/products.py
-from fastapi import APIRouter, HTTPException, status
-from typing import List
+from fastapi import APIRouter, HTTPException, status, Depends
+from typing import List, Annotated
 from beanie import PydanticObjectId # Beanie's ObjectId type for path parameters
 
 # Import models
@@ -8,19 +8,47 @@ from app.models.product import Product, ProductCreate
 from app.models.response_models import ProductWithUser
 from app.models.user import User # Import User to validate creator_id
 
-router = APIRouter()
+from fastapi.security import OAuth2PasswordBearer
+from app.core.security import decode_access_token
+
+# Define the OAuth2 scheme (remains the same)
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
+
+# Dependency to get the current authenticated user (remains the same)
+async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> User:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    payload = decode_access_token(token)
+    if payload is None:
+        raise credentials_exception
+    
+    email: str = payload.get("sub")
+    if email is None:
+        raise credentials_exception
+    
+    user = await User.find_one(User.email == email)
+    if user is None:
+        raise credentials_exception
+    
+    return user
+
+router = APIRouter(dependencies=[Depends(get_current_user)]) # <-- Global dependency for this router!
+
 
 @router.post("/products", response_model=Product, status_code=status.HTTP_201_CREATED)
-async def create_product(product_in: ProductCreate):
+async def create_product(product_in: ProductCreate, current_user: User = Depends(get_current_user)):
     # Optional: Validate if the creator_id actually belongs to an existing user
-    creator_exists = await User.find_one(User.id == product_in.creator_id)
+    creator_exists = await User.find_one(User.id == current_user.id)
     if not creator_exists:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Creator with ID {product_in.creator_id} not found."
         )
 
-    new_product = Product(**product_in.model_dump())
+    new_product = Product(**product_in.model_dump(), creator_id=current_user.id)
     await new_product.insert()
     return new_product
 
